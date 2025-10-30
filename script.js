@@ -1,6 +1,7 @@
 // --- 1. IMPORT GAME DATA ---
-// Import the expanded player database from the separate file
 import { GAME_DATA } from './players.js';
+// NEW: Import the archetype database
+import { ARCHETYPES } from './player_archetypes.js';
 
 // --- 2. GAME CONSTANTS & STATE ---
 const POSITIONS = ["PG", "SG", "SF", "PF", "C"];
@@ -8,8 +9,8 @@ const ELIMINATION_ROUNDS = [3, 3, 2]; // Open 3, then 3, then 2
 
 // Game State Variables
 let currentPositionIndex = 0;
-let cases = []; // Array of 10 player objects, {name, value}, for the *current* round
-let caseStatus = []; // 10-item array: "closed", "opened", "playerCase"
+let cases = []; 
+let caseStatus = [];
 let playerCaseIndex = -1;
 let eliminationsThisRound = 0;
 let currentEliminationRound = 0;
@@ -21,18 +22,28 @@ let currentBankerOffer = null;
 const statusMessage = document.getElementById("status-message");
 const caseGrid = document.getElementById("case-grid");
 const playerBoard = document.getElementById("player-board");
+const playerBoardContainer = document.getElementById("player-board-container"); // NEW
 const offerModal = document.getElementById("offer-modal");
 const offerPlayerName = document.getElementById("offer-player-name");
 const dealButton = document.getElementById("deal-button");
 const noDealButton = document.getElementById("no-deal-button");
 const resetButton = document.getElementById("reset-button");
+const resetButtonContainer = document.getElementById("reset-button-container"); // NEW
 
-// NEW DOM References for Switch Modal
+// Switch Modal References
 const switchModal = document.getElementById("switch-modal");
 const yourCaseNumber = document.getElementById("your-case-number");
 const otherCaseNumber = document.getElementById("other-case-number");
 const switchButton = document.getElementById("switch-button");
 const keepButton = document.getElementById("keep-button");
+
+// NEW Report Card References
+const seasonReport = document.getElementById("season-report");
+const reportRecord = document.getElementById("report-record");
+const reportGrade = document.getElementById("report-grade");
+const reportStrengths = document.getElementById("report-strengths");
+const reportWeaknesses = document.getElementById("report-weaknesses");
+
 
 // --- 4. CORE GAME FUNCTIONS ---
 
@@ -43,9 +54,17 @@ function initGame() {
     currentPositionIndex = 0;
     finalTeam = { PG: null, SG: null, SF: null, PF: null, C: null };
     updateTeamRosterUI();
-    // Hide modals in case a reset is hit while one is open
+    
+    // Hide modals
     offerModal.classList.add("hidden");
     switchModal.classList.add("hidden");
+
+    // NEW: Hide report card and show game elements
+    seasonReport.classList.add("hidden");
+    caseGrid.classList.remove("hidden");
+    playerBoardContainer.classList.remove("hidden");
+    resetButtonContainer.classList.remove("hidden"); // Show reset button
+    
     startPositionRound();
 }
 
@@ -69,8 +88,7 @@ function startPositionRound() {
     const currentPosition = POSITIONS[currentPositionIndex];
     statusMessage.textContent = `Pick your case for ${currentPosition}`;
 
-    // --- NEW LOGIC (Request 1) ---
-    // Get the *pool* of players for this position (e.g., GAME_DATA.PG)
+    // Get the *pool* of players for this position
     const playerPool = GAME_DATA[currentPosition];
     
     // Build the "super pools" based on tiers
@@ -79,19 +97,25 @@ function startPositionRound() {
     const badPlayers = [];   // 1-3
 
     for (let value = 10; value >= 8; value--) {
-        playerPool[value].forEach(name => {
-            greatPlayers.push({ name, value });
-        });
+        if (playerPool[value]) {
+            playerPool[value].forEach(name => {
+                greatPlayers.push({ name, value });
+            });
+        }
     }
     for (let value = 7; value >= 4; value--) {
-        playerPool[value].forEach(name => {
-            midPlayers.push({ name, value });
-        });
+        if (playerPool[value]) {
+            playerPool[value].forEach(name => {
+                midPlayers.push({ name, value });
+            });
+        }
     }
     for (let value = 3; value >= 1; value--) {
-        playerPool[value].forEach(name => {
-            badPlayers.push({ name, value });
-        });
+         if (playerPool[value]) {
+            playerPool[value].forEach(name => {
+                badPlayers.push({ name, value });
+            });
+        }
     }
 
     // Build the 10-player board for this round
@@ -109,7 +133,7 @@ function startPositionRound() {
     shuffleArray(badPlayers);
     playersForThisRound = playersForThisRound.concat(badPlayers.slice(0, 3));
 
-    // Now we have 10 players. Shuffle them into the cases.
+    // Shuffle them into the cases
     shuffleArray(playersForThisRound);
     cases = playersForThisRound;
 
@@ -122,7 +146,6 @@ function startPositionRound() {
  * Main click handler for all cases (uses event delegation)
  */
 function handleCaseClick(e) {
-    // Prevent clicks during modal states
     if (gameState === "BANKER_OFFER" || gameState === "FINAL_CHOICE" || gameState === "GAME_OVER") return;
 
     const clickedCase = e.target.closest('.case-item');
@@ -131,7 +154,6 @@ function handleCaseClick(e) {
     const index = parseInt(clickedCase.dataset.index);
 
     if (gameState === "PICK_CASE") {
-        // Player is picking their main case
         playerCaseIndex = index;
         caseStatus[index] = "playerCase";
         gameState = "ELIMINATE";
@@ -139,9 +161,8 @@ function handleCaseClick(e) {
         renderCases();
     
     } else if (gameState === "ELIMINATE") {
-        // Player is eliminating cases
         if (index === playerCaseIndex || caseStatus[index] === "opened") {
-            return; // Can't open own case or an already-opened case
+            return;
         }
 
         caseStatus[index] = "opened";
@@ -153,13 +174,11 @@ function handleCaseClick(e) {
 
         const elimsNeeded = ELIMINATION_ROUNDS[currentEliminationRound];
         if (eliminationsThisRound === elimsNeeded) {
-            // Round is over, trigger banker offer
             gameState = "BANKER_OFFER";
             eliminationsThisRound = 0;
             currentEliminationRound++;
             makeBankerOffer();
         } else {
-            // Continue eliminating
             statusMessage.textContent = `Eliminate ${elimsNeeded - eliminationsThisRound} more cases.`;
         }
     }
@@ -169,19 +188,15 @@ function handleCaseClick(e) {
  * Calculates and displays the banker's offer
  */
 function makeBankerOffer() {
-    // Check if this is the final 1v1
     if (currentEliminationRound > ELIMINATION_ROUNDS.length) {
         const lastCaseIndex = caseStatus.findIndex(s => s === "closed");
-        // Ensure there's a valid case, otherwise use a fallback
         if (lastCaseIndex !== -1) {
             currentBankerOffer = cases[lastCaseIndex];
         } else {
-            // Fallback: offer the player's own case (shouldn't happen, but safe)
             currentBankerOffer = cases[playerCaseIndex];
         }
         statusMessage.textContent = "Final Offer! Take this player or your case?";
     } else {
-        // Calculate offer
         currentBankerOffer = calculateOffer();
         statusMessage.textContent = "Banker's Offer...";
     }
@@ -196,22 +211,21 @@ function makeBankerOffer() {
 function calculateOffer() {
     let remainingValues = [];
     
-    // Get average value of cases still on the board (same as before)
     for (let i = 0; i < cases.length; i++) {
         if (caseStatus[i] === "closed" || caseStatus[i] === "playerCase") {
             remainingValues.push(cases[i].value);
         }
     }
-    // Prevent division by zero if no values are left (edge case)
     const avgValue = remainingValues.length > 0 ? remainingValues.reduce((a, b) => a + b, 0) / remainingValues.length : 0;
 
-    // --- NEW BANKER LOGIC (Request 2) ---
     const playerPool = GAME_DATA[POSITIONS[currentPositionIndex]];
     const allPlayersThisPosition = [];
     for (let value = 10; value >= 1; value--) {
-        playerPool[value].forEach(name => {
-            allPlayersThisPosition.push({ name, value });
-        });
+        if(playerPool[value]) {
+            playerPool[value].forEach(name => {
+                allPlayersThisPosition.push({ name, value });
+            });
+        }
     }
 
     const openedPlayerNames = [];
@@ -224,22 +238,18 @@ function calculateOffer() {
     let availableOffers = allPlayersThisPosition.filter(player => {
         return !openedPlayerNames.includes(player.name);
     });
-    // --- END NEW BANKER LOGIC ---
 
     if (availableOffers.length === 0) {
-        // Failsafe: just use the remaining players on the board
         availableOffers = cases.filter(player => {
             const openedCaseIndex = cases.findIndex((p, idx) => p.name === player.name && caseStatus[idx] === "opened");
             return openedCaseIndex === -1; 
         });
         
         if (availableOffers.length === 0) {
-            // Absolute failsafe
             return { name: "Failsafe Player", value: 1 };
         }
     }
 
-    // Find the available player closest to the average value
     return availableOffers.reduce((prev, curr) => {
         return (Math.abs(curr.value - avgValue) < Math.abs(prev.value - avgValue) ? curr : prev);
     });
@@ -260,18 +270,14 @@ function handleNoDeal() {
     offerModal.classList.add("hidden");
 
     if (currentEliminationRound > ELIMINATION_ROUNDS.length) {
-        // Player chose their case over the last offer
-        // NEW: Prompt to switch instead of opening case
         promptToSwitch();
     } else {
-        // Continue to next elimination round
         gameState = "ELIMINATE";
         const elimsNeeded = ELIMINATION_ROUNDS[currentEliminationRound];
         if (elimsNeeded) {
             statusMessage.textContent = `Eliminate ${elimsNeeded} cases.`;
         } else {
-            // This can happen if rounds are misconfigured, open case as failsafe
-            promptToSwitch(); // Use switch prompt as final step
+            promptToSwitch();
         }
     }
 }
@@ -283,15 +289,11 @@ function promptToSwitch() {
     gameState = "FINAL_CHOICE"; 
     statusMessage.textContent = "Make your final choice...";
 
-    // Find the last remaining case on the board
     const lastCaseIndex = caseStatus.findIndex(s => s === "closed");
 
-    // Update the modal text
-    // Note: Case indices are 0-9, so add 1 for display
     yourCaseNumber.textContent = `#${playerCaseIndex + 1}`;
-    otherCaseNumber.textContent = `#${lastCaseIndex + 1}`;
+    otherCaseNumber.textContent = (lastCaseIndex !== -1) ? `#${lastCaseIndex + 1}` : `#${playerCaseIndex + 1}`; // Failsafe
 
-    // Show the modal
     switchModal.classList.remove("hidden");
 }
 
@@ -300,7 +302,6 @@ function promptToSwitch() {
  */
 function handleKeepCase() {
     switchModal.classList.add("hidden");
-    // No change needed, just open the case they've had all along
     statusMessage.textContent = `Kept your case! You got...`;
     openPlayerCase();
 }
@@ -311,23 +312,17 @@ function handleKeepCase() {
 function handleSwitchCase() {
     switchModal.classList.add("hidden");
     
-    // Find the last remaining case on the board
     const lastCaseIndex = caseStatus.findIndex(s => s === "closed");
 
-    // --- THIS IS THE SWITCH ---
-    // The "playerCase" (old) becomes "closed"
-    caseStatus[playerCaseIndex] = "closed"; 
-    // The "closed" (other) case becomes the new "playerCase"
-    playerCaseIndex = lastCaseIndex;
-    caseStatus[playerCaseIndex] = "playerCase";
-    // --- END SWITCH ---
-
-    // Re-render cases to show the switch visually
+    if (lastCaseIndex !== -1) {
+        caseStatus[playerCaseIndex] = "closed"; 
+        playerCaseIndex = lastCaseIndex;
+        caseStatus[playerCaseIndex] = "playerCase";
+    }
+    
     renderCases();
-
-    // Open the (new) player case
     statusMessage.textContent = "Switched cases! You got...";
-    // Add a small delay so they can see the case # change color
+
     setTimeout(() => {
         openPlayerCase();
     }, 1000); // 1 second delay
@@ -339,7 +334,6 @@ function handleSwitchCase() {
  */
 function openPlayerCase() {
     const player = cases[playerCaseIndex];
-    // statusMessage.textContent = `Your case had ${player.name}!`; // This is set in keep/switch handlers now
     acceptPlayer(player);
 }
 
@@ -352,20 +346,136 @@ function acceptPlayer(player) {
     updateTeamRosterUI();
 
     currentPositionIndex++;
-    // Use a timeout to let the player see the result
+    
     setTimeout(() => {
         startPositionRound();
-    }, 2500); // 2.5-second delay to read the result
+    }, 2500); // 2.5-second delay
 }
 
 /**
- * Ends the game when all 5 positions are filled
+ * Ends the game and shows the NEW analysis report
  */
 function endGame() {
     gameState = "GAME_OVER";
-    statusMessage.textContent = "Your Championship Team is set!";
-    caseGrid.innerHTML = `<div class="col-span-5 text-center text-2xl font-bold">GAME OVER!</div>`;
-    playerBoard.innerHTML = `<div class="col-span-2 text-center">Thanks for playing!</div>`;
+    statusMessage.textContent = "Your Championship Team is set! Analyzing...";
+
+    // Hide game elements
+    caseGrid.innerHTML = "";
+    caseGrid.classList.add("hidden");
+    playerBoard.innerHTML = "";
+    playerBoardContainer.classList.add("hidden");
+    resetButtonContainer.classList.add("hidden"); // Hide reset button temporarily
+
+    // --- NEW ANALYSIS LOGIC ---
+    analyzeAndShowReport();
+}
+
+/**
+ * NEW: Analyzes the finalTeam and renders the report
+ */
+function analyzeAndShowReport() {
+    let totalValue = 0;
+    const allTags = new Set();
+    let projectCount = 0;
+
+    for (const pos of POSITIONS) {
+        const player = finalTeam[pos];
+        if (player) {
+            totalValue += player.value;
+            const playerTags = ARCHETYPES[player.name];
+
+            if (playerTags) {
+                playerTags.forEach(tag => allTags.add(tag));
+            } else {
+                // Player not in our archetype list
+                allTags.add("WILDCARD");
+            }
+        }
+    }
+
+    // --- 1. Generate Quantitative Analysis (Record & Grade) ---
+    let record = "41-41";
+    let grade = "C+ (Play-In Team)";
+
+    if (totalValue >= 48) {
+        record = "62-20"; grade = "A+ (Championship Favorite)";
+    } else if (totalValue >= 45) {
+        record = "57-25"; grade = "A (True Contender)";
+    } else if (totalValue >= 40) {
+        record = "51-31"; grade = "B+ (Playoff Lock)";
+    } else if (totalValue >= 35) {
+        record = "45-37"; grade = "B (Solid Playoff Team)";
+    } else if (totalValue >= 30) {
+        record = "40-42"; grade = "C (Play-In Bubble)";
+    } else if (totalValue >= 25) {
+        record = "33-49"; grade = "D (Lottery Bound)";
+    } else if (totalValue >= 20) {
+        record = "25-57"; grade = "F (Deep Lottery)";
+    } else {
+        record = "17-65"; grade = "F- (Generational Tank)";
+    }
+
+    reportRecord.textContent = record;
+    reportGrade.textContent = grade;
+
+    // --- 2. Generate Qualitative Analysis (Synergy) ---
+    const strengths = new Set();
+    const weaknesses = new Set();
+
+    // Check for core needs
+    if (allTags.has("PLAYMAKER")) strengths.add("Elite Playmaking");
+    else weaknesses.add("Lacks a true floor general");
+
+    if (allTags.has("SCORING")) strengths.add("Go-to Scoring Options");
+    else weaknesses.add("No reliable go-to scorer");
+    
+    if (allTags.has("SPACING")) strengths.add("Good Floor Spacing");
+    else weaknesses.add("Poor Floor Spacing");
+
+    if (allTags.has("DEFENSE_PER")) strengths.add("Strong Perimeter Defense");
+    else weaknesses.add("Weak Perimeter Defense");
+
+    if (allTags.has("DEFENSE_INT")) strengths.add("Strong Interior Defense");
+    else weaknesses.add("Weak Interior Defense");
+
+    if (allTags.has("REBOUNDING")) strengths.add("Solid Rebounding");
+    else weaknesses.add("Poor Rebounding");
+
+    // Check for combinations
+    if (allTags.has("DEFENSE_PER") && allTags.has("DEFENSE_INT")) {
+        strengths.add("Versatile Defensive Identity");
+    }
+    if (allTags.has("SCORING") && allTags.has("PLAYMAKER")) {
+        strengths.add("Dynamic Offense");
+    }
+    if (allTags.has("PROJECT")) {
+        projectCount = [...allTags].filter(t => t === "PROJECT").length;
+        weaknesses.add(`Relies on ${projectCount} unproven ${projectCount > 1 ? 'players' : 'player'}`);
+    }
+    if (allTags.has("WILDCARD")) {
+        weaknesses.add("Contains unknown 'Wildcard' players");
+    }
+
+    // --- 3. Render Report ---
+    reportStrengths.innerHTML = "";
+    reportWeaknesses.innerHTML = "";
+
+    strengths.forEach(s => {
+        const li = document.createElement("li");
+        li.textContent = s;
+        reportStrengths.appendChild(li);
+    });
+
+    weaknesses.forEach(w => {
+        const li = document.createElement("li");
+        li.textContent = w;
+        reportWeaknesses.appendChild(li);
+    });
+
+    // Show the report
+    statusMessage.textContent = "Your 2025-2026 Season Projection is in!";
+    seasonReport.classList.remove("hidden");
+    resetButtonContainer.classList.remove("hidden"); // Show reset button again
 }
 
 
@@ -381,35 +491,29 @@ function renderCases() {
         caseEl.dataset.index = i;
         caseEl.className = "case-item h-20 md:h-24 flex items-center justify-center rounded-lg shadow-md cursor-pointer transition-all duration-200";
 
-        const player = cases[i];
+        // Failsafe for empty case
+        const player = cases[i] || { name: 'Error', value: 0 };
         
-        // 1. Create the case number span
         const caseNumber = document.createElement("span");
         caseNumber.className = "case-number text-3xl font-extrabold";
         caseNumber.textContent = i + 1;
 
-        // 2. Create the player name span, but keep it hidden by default
         const casePlayer = document.createElement("span");
         casePlayer.className = "case-player text-center text-xs font-bold p-1";
         casePlayer.textContent = player.name;
-        casePlayer.style.display = "none"; // Hide it by default using inline style
+        casePlayer.style.display = "none";
 
         caseEl.appendChild(caseNumber);
         caseEl.appendChild(casePlayer);
 
-        // Apply styles based on status
         const status = caseStatus[i];
         if (status === "playerCase") {
             caseEl.classList.add("player-case");
         } else if (status === "opened") {
             caseEl.classList.add("opened-case");
-            
-            // Force the number to hide and the player name to show
             caseNumber.style.display = "none";
             casePlayer.style.display = "block";
-            
         } else {
-            // "closed"
             caseEl.classList.add("bg-gray-600", "hover:bg-gray-500");
         }
         
@@ -423,8 +527,6 @@ function renderCases() {
 function renderPlayerBoard() {
     playerBoard.innerHTML = ""; // Clear board
 
-    // Get the players for this round from the 'cases' variable
-    // and create a new, sorted copy in one step.
     const sortedPlayers = [...cases].sort((a, b) => b.value - a.value);
 
     for (const player of sortedPlayers) {
@@ -432,7 +534,7 @@ function renderPlayerBoard() {
         playerEl.textContent = player.name;
         playerEl.dataset.playerName = player.name;
         playerEl.className = "player-board-player bg-gray-700 p-2 rounded text-sm";
-        // Color code by value
+        
         if (player.value >= 8) playerEl.classList.add("text-green-400");
         else if (player.value >= 4) playerEl.classList.add("text-yellow-400");
         else playerEl.classList.add("text-red-400");
@@ -484,10 +586,9 @@ dealButton.addEventListener("click", handleDeal);
 noDealButton.addEventListener("click", handleNoDeal);
 resetButton.addEventListener("click", initGame);
 
-// NEW Listeners for Switch Modal
+// Listeners for Switch Modal
 switchButton.addEventListener("click", handleSwitchCase);
 keepButton.addEventListener("click", handleKeepCase);
 
 // --- 8. START THE GAME! ---
 initGame();
-

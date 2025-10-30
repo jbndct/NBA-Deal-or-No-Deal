@@ -47,7 +47,7 @@
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             
-            <div class="md:col-span-1 bg-gray-800 rounded-lg shadow-xl p-4">
+            <div id="player-board-container" class="md:col-span-1 bg-gray-800 rounded-lg shadow-xl p-4">
                 <h3 class="text-lg font-bold mb-3 text-center">REMAINING PLAYERS</h3>
                 <div id="player-board" class="grid grid-cols-2 gap-2">
                     <!-- Player board will be populated by JS -->
@@ -63,7 +63,35 @@
                     <!-- Cases will be populated by JS -->
                 </div>
 
-                <div class="text-center">
+                <!-- NEW: Season Report Section (starts hidden) -->
+                <div id="season-report" class="hidden">
+                    <div class="report-card bg-gray-800 rounded-lg shadow-xl p-6">
+                        <h2 class="text-3xl font-extrabold text-center mb-4">SEASON PROJECTION</h2>
+                        
+                        <div class="text-center bg-gray-700 rounded-lg p-4 mb-6">
+                            <div class="text-sm font-semibold text-amber-400">PROJECTED RECORD</div>
+                            <div id="report-record" class="text-4xl font-bold text-white">41-41</div>
+                            <div id="report-grade" class="text-2xl font-semibold text-gray-300">Play-In Team</div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="bg-gray-700 rounded-lg p-4">
+                                <h3 class="text-lg font-bold text-green-400 mb-2">STRENGTHS</h3>
+                                <ul id="report-strengths" class="list-disc list-inside space-y-1">
+                                    <!-- Populated by JS -->
+                                </ul>
+                            </div>
+                            <div class="bg-gray-700 rounded-lg p-4">
+                                <h3 class="text-lg font-bold text-red-400 mb-2">WEAKNESSES</h3>
+                                <ul id="report-weaknesses" class="list-disc list-inside space-y-1">
+                                    <!-- Populated by JS -->
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="reset-button-container" class="text-center">
                     <button id="reset-button" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg transition duration-200">
                         Reset Game
                     </button>
@@ -91,7 +119,7 @@
         </div>
     </div>
 
-    <!-- NEW: Switch Case Modal -->
+    <!-- Switch Case Modal -->
     <div id="switch-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50 hidden">
         <div class="bg-gray-800 rounded-lg shadow-2xl p-6 md:p-8 max-w-md w-full text-center">
             <h2 class="text-3xl font-extrabold mb-4">FINAL CHOICE: SWITCH?</h2>
@@ -121,3 +149,4 @@
     <script type="module" src="script.js"></script>
 </body>
 </html>
+

@@ -35,3 +35,15 @@ body {
     text-decoration: line-through;
     opacity: 0.4;
 }
+
+/* --- NEW STYLES FOR REPORT CARD --- */
+#season-report ul li {
+    font-size: 0.95rem;
+}
+
+/* Style for empty strength/weakness lists */
+#season-report ul:empty::after {
+    content: 'None';
+    font-style: italic;
+    color: #9ca3af; /* Tailwind gray-400 */
+}
