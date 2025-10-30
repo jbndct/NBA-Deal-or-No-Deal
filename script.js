@@ -14,7 +14,7 @@ let playerCaseIndex = -1;
 let eliminationsThisRound = 0;
 let currentEliminationRound = 0;
 let finalTeam = { PG: null, SG: null, SF: null, PF: null, C: null };
-let gameState = "PICK_POSITION"; // "PICK_CASE", "ELIMINATE", "BANKER_OFFER", "GAME_OVER"
+let gameState = "PICK_POSITION"; // "PICK_CASE", "ELIMINATE", "BANKER_OFFER", "FINAL_CHOICE", "GAME_OVER"
 let currentBankerOffer = null;
 
 // --- 3. DOM ELEMENT REFERENCES ---
@@ -27,6 +27,13 @@ const dealButton = document.getElementById("deal-button");
 const noDealButton = document.getElementById("no-deal-button");
 const resetButton = document.getElementById("reset-button");
 
+// NEW DOM References for Switch Modal
+const switchModal = document.getElementById("switch-modal");
+const yourCaseNumber = document.getElementById("your-case-number");
+const otherCaseNumber = document.getElementById("other-case-number");
+const switchButton = document.getElementById("switch-button");
+const keepButton = document.getElementById("keep-button");
+
 // --- 4. CORE GAME FUNCTIONS ---
 
 /**
@@ -36,12 +43,14 @@ function initGame() {
     currentPositionIndex = 0;
     finalTeam = { PG: null, SG: null, SF: null, PF: null, C: null };
     updateTeamRosterUI();
+    // Hide modals in case a reset is hit while one is open
+    offerModal.classList.add("hidden");
+    switchModal.classList.add("hidden");
     startPositionRound();
 }
 
 /**
  * Sets up a new round for the next position
- * *** THIS IS THE NEW RANDOMIZED LOGIC ***
  */
 function startPositionRound() {
     if (currentPositionIndex >= POSITIONS.length) {
@@ -60,26 +69,47 @@ function startPositionRound() {
     const currentPosition = POSITIONS[currentPositionIndex];
     statusMessage.textContent = `Pick your case for ${currentPosition}`;
 
-    // --- NEW LOGIC ---
+    // --- NEW LOGIC (Request 1) ---
     // Get the *pool* of players for this position (e.g., GAME_DATA.PG)
     const playerPool = GAME_DATA[currentPosition];
     
-    // Build the 10-player board for this round
-    let playersForThisRound = [];
-    for (let value = 10; value >= 1; value--) {
-        const poolForValue = playerPool[value]; // Get the array of players at this value
-        // Pick one random player *name* from that array
-        const randomPlayerName = poolForValue[Math.floor(Math.random() * poolForValue.length)];
-        
-        // Add the player object to our round
-        playersForThisRound.push({
-            name: randomPlayerName,
-            value: value
+    // Build the "super pools" based on tiers
+    const greatPlayers = []; // 8-10
+    const midPlayers = [];   // 4-7
+    const badPlayers = [];   // 1-3
+
+    for (let value = 10; value >= 8; value--) {
+        playerPool[value].forEach(name => {
+            greatPlayers.push({ name, value });
+        });
+    }
+    for (let value = 7; value >= 4; value--) {
+        playerPool[value].forEach(name => {
+            midPlayers.push({ name, value });
+        });
+    }
+    for (let value = 3; value >= 1; value--) {
+        playerPool[value].forEach(name => {
+            badPlayers.push({ name, value });
         });
     }
 
-    // Now we have 10 players, one from each value tier
-    // Shuffle them and assign them to the 'cases' variable
+    // Build the 10-player board for this round
+    let playersForThisRound = [];
+
+    // Shuffle and pick 3 "great" players
+    shuffleArray(greatPlayers);
+    playersForThisRound = playersForThisRound.concat(greatPlayers.slice(0, 3));
+
+    // Shuffle and pick 4 "mid" players
+    shuffleArray(midPlayers);
+    playersForThisRound = playersForThisRound.concat(midPlayers.slice(0, 4));
+
+    // Shuffle and pick 3 "bad" players
+    shuffleArray(badPlayers);
+    playersForThisRound = playersForThisRound.concat(badPlayers.slice(0, 3));
+
+    // Now we have 10 players. Shuffle them into the cases.
     shuffleArray(playersForThisRound);
     cases = playersForThisRound;
 
@@ -92,6 +122,9 @@ function startPositionRound() {
  * Main click handler for all cases (uses event delegation)
  */
 function handleCaseClick(e) {
+    // Prevent clicks during modal states
+    if (gameState === "BANKER_OFFER" || gameState === "FINAL_CHOICE" || gameState === "GAME_OVER") return;
+
     const clickedCase = e.target.closest('.case-item');
     if (!clickedCase || clickedCase.dataset.index === undefined) return;
 
@@ -139,7 +172,13 @@ function makeBankerOffer() {
     // Check if this is the final 1v1
     if (currentEliminationRound > ELIMINATION_ROUNDS.length) {
         const lastCaseIndex = caseStatus.findIndex(s => s === "closed");
-        currentBankerOffer = cases[lastCaseIndex];
+        // Ensure there's a valid case, otherwise use a fallback
+        if (lastCaseIndex !== -1) {
+            currentBankerOffer = cases[lastCaseIndex];
+        } else {
+            // Fallback: offer the player's own case (shouldn't happen, but safe)
+            currentBankerOffer = cases[playerCaseIndex];
+        }
         statusMessage.textContent = "Final Offer! Take this player or your case?";
     } else {
         // Calculate offer
@@ -153,33 +192,51 @@ function makeBankerOffer() {
 
 /**
  * The "AI" for the banker.
- * Calculates offer based on the average value of *remaining* cases.
- * Offers the player (from the 10 on the board) whose value is closest to that average.
  */
 function calculateOffer() {
     let remainingValues = [];
     
-    // Get all players for *this* round (the 10 in the cases)
-    let allPlayersThisRound = [...cases];
-
+    // Get average value of cases still on the board (same as before)
     for (let i = 0; i < cases.length; i++) {
         if (caseStatus[i] === "closed" || caseStatus[i] === "playerCase") {
             remainingValues.push(cases[i].value);
         }
     }
+    // Prevent division by zero if no values are left (edge case)
+    const avgValue = remainingValues.length > 0 ? remainingValues.reduce((a, b) => a + b, 0) / remainingValues.length : 0;
 
-    const avgValue = remainingValues.reduce((a, b) => a + b, 0) / remainingValues.length;
+    // --- NEW BANKER LOGIC (Request 2) ---
+    const playerPool = GAME_DATA[POSITIONS[currentPositionIndex]];
+    const allPlayersThisPosition = [];
+    for (let value = 10; value >= 1; value--) {
+        playerPool[value].forEach(name => {
+            allPlayersThisPosition.push({ name, value });
+        });
+    }
 
-    // Find an "offerable" player. This is a player not yet eliminated.
-    let availableOffers = allPlayersThisRound.filter(player => {
-        // Check if this player is in an *opened* case.
-        const openedCaseIndex = cases.findIndex((p, idx) => p.name === player.name && caseStatus[idx] === "opened");
-        return openedCaseIndex === -1; // Return true if NOT in an opened case
+    const openedPlayerNames = [];
+    for(let i = 0; i < cases.length; i++) {
+        if (caseStatus[i] === 'opened') {
+            openedPlayerNames.push(cases[i].name);
+        }
+    }
+
+    let availableOffers = allPlayersThisPosition.filter(player => {
+        return !openedPlayerNames.includes(player.name);
     });
+    // --- END NEW BANKER LOGIC ---
 
     if (availableOffers.length === 0) {
-        // Failsafe, should rarely happen. Offer the lowest-value player.
-        return [...allPlayersThisRound].sort((a,b) => a.value - b.value)[0];
+        // Failsafe: just use the remaining players on the board
+        availableOffers = cases.filter(player => {
+            const openedCaseIndex = cases.findIndex((p, idx) => p.name === player.name && caseStatus[idx] === "opened");
+            return openedCaseIndex === -1; 
+        });
+        
+        if (availableOffers.length === 0) {
+            // Absolute failsafe
+            return { name: "Failsafe Player", value: 1 };
+        }
     }
 
     // Find the available player closest to the average value
@@ -204,7 +261,8 @@ function handleNoDeal() {
 
     if (currentEliminationRound > ELIMINATION_ROUNDS.length) {
         // Player chose their case over the last offer
-        openPlayerCase();
+        // NEW: Prompt to switch instead of opening case
+        promptToSwitch();
     } else {
         // Continue to next elimination round
         gameState = "ELIMINATE";
@@ -213,17 +271,75 @@ function handleNoDeal() {
             statusMessage.textContent = `Eliminate ${elimsNeeded} cases.`;
         } else {
             // This can happen if rounds are misconfigured, open case as failsafe
-            openPlayerCase();
+            promptToSwitch(); // Use switch prompt as final step
         }
     }
 }
+
+/**
+ * NEW: Shows the final switch modal
+ */
+function promptToSwitch() {
+    gameState = "FINAL_CHOICE"; 
+    statusMessage.textContent = "Make your final choice...";
+
+    // Find the last remaining case on the board
+    const lastCaseIndex = caseStatus.findIndex(s => s === "closed");
+
+    // Update the modal text
+    // Note: Case indices are 0-9, so add 1 for display
+    yourCaseNumber.textContent = `#${playerCaseIndex + 1}`;
+    otherCaseNumber.textContent = `#${lastCaseIndex + 1}`;
+
+    // Show the modal
+    switchModal.classList.remove("hidden");
+}
+
+/**
+ * NEW: Player decides to KEEP their original case
+ */
+function handleKeepCase() {
+    switchModal.classList.add("hidden");
+    // No change needed, just open the case they've had all along
+    statusMessage.textContent = `Kept your case! You got...`;
+    openPlayerCase();
+}
+
+/**
+ * NEW: Player decides to SWITCH cases
+ */
+function handleSwitchCase() {
+    switchModal.classList.add("hidden");
+    
+    // Find the last remaining case on the board
+    const lastCaseIndex = caseStatus.findIndex(s => s === "closed");
+
+    // --- THIS IS THE SWITCH ---
+    // The "playerCase" (old) becomes "closed"
+    caseStatus[playerCaseIndex] = "closed"; 
+    // The "closed" (other) case becomes the new "playerCase"
+    playerCaseIndex = lastCaseIndex;
+    caseStatus[playerCaseIndex] = "playerCase";
+    // --- END SWITCH ---
+
+    // Re-render cases to show the switch visually
+    renderCases();
+
+    // Open the (new) player case
+    statusMessage.textContent = "Switched cases! You got...";
+    // Add a small delay so they can see the case # change color
+    setTimeout(() => {
+        openPlayerCase();
+    }, 1000); // 1 second delay
+}
+
 
 /**
  * Final step: Player gets what's in their chosen case
  */
 function openPlayerCase() {
     const player = cases[playerCaseIndex];
-    statusMessage.textContent = `Your case had ${player.name}!`;
+    // statusMessage.textContent = `Your case had ${player.name}!`; // This is set in keep/switch handlers now
     acceptPlayer(player);
 }
 
@@ -239,7 +355,7 @@ function acceptPlayer(player) {
     // Use a timeout to let the player see the result
     setTimeout(() => {
         startPositionRound();
-    }, 2000); // 2-second delay
+    }, 2500); // 2.5-second delay to read the result
 }
 
 /**
@@ -267,8 +383,6 @@ function renderCases() {
 
         const player = cases[i];
         
-        // --- START: MODIFIED CODE ---
-        
         // 1. Create the case number span
         const caseNumber = document.createElement("span");
         caseNumber.className = "case-number text-3xl font-extrabold";
@@ -283,8 +397,6 @@ function renderCases() {
         caseEl.appendChild(caseNumber);
         caseEl.appendChild(casePlayer);
 
-        // --- END: MODIFIED CODE ---
-
         // Apply styles based on status
         const status = caseStatus[i];
         if (status === "playerCase") {
@@ -292,11 +404,9 @@ function renderCases() {
         } else if (status === "opened") {
             caseEl.classList.add("opened-case");
             
-            // --- START: NEW LOGIC FOR OPENED CASES ---
             // Force the number to hide and the player name to show
             caseNumber.style.display = "none";
             casePlayer.style.display = "block";
-            // --- END: NEW LOGIC FOR OPENED CASES ---
             
         } else {
             // "closed"
@@ -374,5 +484,10 @@ dealButton.addEventListener("click", handleDeal);
 noDealButton.addEventListener("click", handleNoDeal);
 resetButton.addEventListener("click", initGame);
 
+// NEW Listeners for Switch Modal
+switchButton.addEventListener("click", handleSwitchCase);
+keepButton.addEventListener("click", handleKeepCase);
+
 // --- 8. START THE GAME! ---
 initGame();
+
