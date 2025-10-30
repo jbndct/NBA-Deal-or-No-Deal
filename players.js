@@ -1,67 +1,69 @@
-// This file exports the expanded player database.
-// Each position has 10 "value" tiers.
-// For each round, the game will randomly pick ONE player from each tier
-// to create the 10-player board for that round.
+// --- NBA Deal or No Deal Player Database ---
+// This file contains the expanded player pool for the game.
+// Data is based on 2025-2026 NBA season rankings and projections.
+// The game randomly picks ONE player from each tier (10 down to 1)
+// to build the 10-player board for each round.
 
 export const GAME_DATA = {
     "PG": {
-        10: ["Luka Dončić", "Shai Gilgeous-Alexander"],
-        9: ["Steph Curry", "Tyrese Haliburton", "Jalen Brunson"],
-        8: ["Damian Lillard", "Trae Young", "De'Aaron Fox", "Ja Morant"],
-        7: ["James Harden", "Darius Garland", "Kyrie Irving"],
-        6: ["Cade Cunningham", "LaMelo Ball", "Tyrese Maxey"],
-        5: ["CJ McCollum", "Jrue Holiday", "Mike Conley"],
-        4: ["D'Angelo Russell", "Lonzo Ball", "Anfernee Simons"],
-        3: ["Markelle Fultz", "Gabe Vincent", "Tre Jones"],
-        2: ["Dennis Smith Jr.", "Monte Morris", "Davion Mitchell"],
-        1: ["Killian Hayes", "Malachi Flynn", "Sharife Cooper"]
+        10: ["Shai Gilgeous-Alexander", "Luka Dončić (LAL)"],
+        9: ["Jalen Brunson", "Tyrese Haliburton", "Stephen Curry"],
+        8: ["Anthony Edwards", "Tyrese Maxey", "Trae Young", "Cade Cunningham"],
+        7: ["Ja Morant", "De'Aaron Fox (SAN)", "Jamal Murray", "LaMelo Ball", "Donovan Mitchell"],
+        6: ["Darius Garland", "Coby White", "Amen Thompson (HOU)"],
+        5: ["Jrue Holiday (POR)", "Derrick White", "Mike Conley", "Anfernee Simons (BOS)"],
+        4: ["CJ McCollum (WAS)", "Austin Reaves (LAL)", "Josh Giddey (CHI)", "Immanuel Quickley"],
+        3: ["Jalen Suggs", "Tre Jones", "Markelle Fultz", "Scoot Henderson"],
+        2: ["T.J. McConnell", "Davion Mitchell", "Ayo Dosunmu", "Monte Morris"],
+        1: ["Isaiah Collier (UTA)", "Bub Carrington (WAS)", "Dylan Harper (SAN)", "Malachi Flynn"]
     },
     "SG": {
-        10: ["Anthony Edwards", "Devin Booker"],
-        9: ["Donovan Mitchell", "Derrick White", "Jalen Williams"],
-        8: ["Jaylen Brown", "Paul George", "Desmond Bane"],
-        7: ["Austin Reaves", "Tyler Herro", "Jordan Poole"],
-        6: ["Klay Thompson", "Jalen Green", "Ben Mathurin"],
-        5: ["Kevin Huerter", "Cam Thomas", "Gary Trent Jr."],
-        4: ["Grayson Allen", "Alex Caruso", "Josh Giddey"],
-        3: ["Luke Kennard", "Kentavious Caldwell-Pope", "Jalen Suggs"],
-        2: ["Blake Wesley", "Quentin Grimes", "Ayo Dosunmu"],
-        1: ["Bronny James", "Jaden Hardy", "Keon Johnson"]
+        10: ["Devin Booker", "Anthony Edwards"], // Edwards is PG/SG, Booker is PG/SG
+        9: ["Jalen Williams (OKC)", "Donovan Mitchell"],
+        8: ["Jaylen Brown", "Tyler Herro", "Desmond Bane (ORL)"],
+        7: ["Jalen Green (PHO)", "Jordan Poole (NOR)", "Austin Reaves (LAL)", "Zach LaVine (SAC)"],
+        6: ["Ben Mathurin", "Cam Thomas", "Dyson Daniels (ATL)", "Bogdan Bogdanović"],
+        5: ["Alex Caruso (OKC)", "Gary Trent Jr. (MIL)", "Klay Thompson (DAL)", "Norman Powell (MIA)"],
+        4: ["Brandin Podziemski", "Quentin Grimes (PHI)", "Lu Dort", "Herb Jones (NOR)"],
+        3: ["Christian Braun", "Matisse Thybulle (POR)", "Jaden Ivey", "Shaedon Sharpe"],
+        2: ["Stephon Castle (SAN)", "Ayo Dosunmu (CHI)", "Blake Wesley", "Keyonte George (UTA)"],
+        1: ["VJ Edgecombe (PHI)", "Kon Knueppel (CHA)", "Jaden Hardy", "Cam Whitmore (WAS)"]
     },
     "SF": {
-        10: ["Jayson Tatum", "LeBron James", "Kawhi Leonard"],
-        9: ["Jimmy Butler", "Brandon Ingram", "Mikal Bridges"],
-        8: ["DeMar DeRozan", "Franz Wagner", "Scottie Barnes"],
-        7: ["Brandon Miller", "RJ Barrett", "Trey Murphy III"],
-        6: ["Andrew Wiggins", "Michael Porter Jr.", "Jaden McDaniels"],
-        5: ["Deni Avdija", "Herb Jones", "Cam Johnson"],
-        4: ["Josh Okogie", "Matisse Thybulle", "Corey Kispert"],
-        3: ["Naji Marshall", "Ziaire Williams", "Julian Strawther"],
-        2: ["Jae'Sean Tate", "Cedi Osman", "David Roddy"],
-        1: ["Emoni Bates", "Max Christie", "Jake LaRavia"]
+        10: ["Jayson Tatum"], // Tatum is often PF, but a primary wing
+        9: ["Kawhi Leonard", "Jalen Williams (OKC)"],
+        8: ["LeBron James (LAL)", "Paul George (PHI)", "Mikal Bridges (NYK)", "Jimmy Butler (GSW)"],
+        7: ["Franz Wagner", "Brandon Miller", "Scottie Barnes", "Trey Murphy III"],
+        6: ["DeMar DeRozan (SAC)", "Michael Porter Jr. (BKN)", "Jaden McDaniels", "RJ Barrett"],
+        5: ["Cam Johnson (DEN)", "Aaron Nesmith", "OG Anunoby (NYK)", "Deni Avdija (POR)"],
+        4: ["Josh Hart (NYK)", "Ausar Thompson", "Tari Eason", "Andrew Wiggins (MIA)"],
+        3: ["Cooper Flagg (DAL)", "Matas Buzelis (CHI)", "Zaccharie Risacher (ATL)", "Bilal Coulibaly"],
+        2: ["Ziaire Williams", "Julian Strawther", "Jae'Sean Tate", "Max Strus"],
+        1: ["Dillon Brooks (PHO)", "Jalen Wells (MEM)", "Corey Kispert", "Naji Marshall"]
     },
     "PF": {
-        10: ["Giannis Antetokounmpo", "Kevin Durant"],
-        9: ["Zion Williamson", "Paolo Banchero", "Lauri Markkanen"],
-        8: ["Pascal Siakam", "Jalen Johnson", "Evan Mobley"],
-        7: ["Draymond Green", "Aaron Gordon", "Jabari Smith Jr."],
-        6: ["Julius Randle", "Kyle Kuzma", "Keegan Murray"],
-        5: ["Cooper Flagg", "Jerami Grant", "PJ Washington"],
-        4: ["Patrick Williams", "Rui Hachimura", "Obi Toppin"],
-        3: ["Kyle Filipowski", "Jae Crowder", "Robert Covington"],
-        2: ["Tajan Salon", "Kenrich Williams", "Trendon Watford"],
-        1: ["Aleksej Pokusevski", "Isaiah Stewart", "Dario Saric"]
+        10: ["Giannis Antetokounmpo", "Nikola Jokic"], // Jokic is C, but top tier
+        9: ["Kevin Durant (HOU)", "Anthony Davis (DAL)"],
+        8: ["Victor Wembanyama", "Zion Williamson", "Paolo Banchero", "Lauri Markkanen"],
+        7: ["Pascal Siakam", "Evan Mobley", "Chet Holmgren", "Jaren Jackson Jr."],
+        6: ["Julius Randle (MIN)", "Domantas Sabonis", "Scottie Barnes", "Jalen Johnson"],
+        5: ["Aaron Gordon", "Jabari Smith Jr.", "Keegan Murray", "Kyle Kuzma (MIL)"],
+        4: ["Draymond Green (GSW)", "PJ Washington", "Rui Hachimura", "Tobias Harris (DET)"],
+        3: ["John Collins (LAC)", "Cooper Flagg (DAL)", "Obi Toppin", "Patrick Williams"],
+        2: ["Bobby Portis", "Jae Crowder", "Robert Covington", "Kenrich Williams"],
+        1: ["Aleksej Pokusevski", "Dario Saric", "Tajan Salon", "Kyle Filipowski (UTA)"]
     },
     "C": {
-        10: ["Nikola Jokic", "Joel Embiid"],
-        9: ["Victor Wembanyama", "Anthony Davis", "Chet Holmgren"],
-        8: ["Bam Adebayo", "Domantas Sabonis", "Alperen Sengun"],
-        7: ["Rudy Gobert", "Jarrett Allen", "Myles Turner"],
-        6: ["Walker Kessler", "Kristaps Porzingis", "Brook Lopez"],
-        5: ["Onyeka Okongwu", "Nic Claxton", "Jusuf Nurkic"],
-        4: ["Zach Edey", "Mitchell Robinson", "Ivica Zubac"],
-        3: ["Clint Capela", "Jonas Valanciunas", "Al Horford"],
-        2: ["Tony Bradley", "Daniel Gafford", "Mason Plumlee"],
-        1: ["Donovan Clingan", "Jalen Duren", "Isaiah Hartenstein"]
+        10: ["Nikola Jokic", "Victor Wembanyama"],
+        9: ["Joel Embiid", "Anthony Davis (DAL)", "Karl-Anthony Towns (NYK)"],
+        8: ["Chet Holmgren", "Domantas Sabonis", "Bam Adebayo", "Alperen Sengun"],
+        7: ["Rudy Gobert", "Myles Turner (MIL)", "Jarrett Allen", "Kristaps Porziņģis (ATL)"],
+        6: ["Walker Kessler", "Nic Claxton (BKN)", "Ivica Zubac (LAC)", "Brook Lopez"],
+        5: ["Jalen Duren", "Dereck Lively II", "Onyeka Okongwu", "Isaiah Hartenstein (OKC)"],
+        4: ["Deandre Ayton (LAL)", "Mark Williams (PHO)", "Mitchell Robinson", "Daniel Gafford (DAL)"],
+        3: ["Clint Capela", "Jonas Valanciunas", "Al Horford", "Zach Edey (MEM)"],
+        2: ["Alex Sarr (WAS)", "Donovan Clingan (POR)", "Jalen Duren", "Mason Plumlee"],
+        1: ["Kel'el Ware (MIA)", "Yves Missi (NOR)", "Neemias Queta", "Tony Bradley"]
     }
 };
+
