@@ -264,12 +264,26 @@ function renderCases() {
         const caseEl = document.createElement("div");
         caseEl.dataset.index = i;
         caseEl.className = "case-item h-20 md:h-24 flex items-center justify-center rounded-lg shadow-md cursor-pointer transition-all duration-200";
-        
-        const caseNumber = `<span class="case-number text-3xl font-extrabold">${i + 1}</span>`;
-        const player = cases[i];
-        const casePlayer = `<span class="case-player hidden text-center text-xs font-bold p-1">${player.name}</span>`;
 
-        caseEl.innerHTML = caseNumber + casePlayer;
+        const player = cases[i];
+        
+        // --- START: MODIFIED CODE ---
+        
+        // 1. Create the case number span
+        const caseNumber = document.createElement("span");
+        caseNumber.className = "case-number text-3xl font-extrabold";
+        caseNumber.textContent = i + 1;
+
+        // 2. Create the player name span, but keep it hidden by default
+        const casePlayer = document.createElement("span");
+        casePlayer.className = "case-player text-center text-xs font-bold p-1";
+        casePlayer.textContent = player.name;
+        casePlayer.style.display = "none"; // Hide it by default using inline style
+
+        caseEl.appendChild(caseNumber);
+        caseEl.appendChild(casePlayer);
+
+        // --- END: MODIFIED CODE ---
 
         // Apply styles based on status
         const status = caseStatus[i];
@@ -277,6 +291,13 @@ function renderCases() {
             caseEl.classList.add("player-case");
         } else if (status === "opened") {
             caseEl.classList.add("opened-case");
+            
+            // --- START: NEW LOGIC FOR OPENED CASES ---
+            // Force the number to hide and the player name to show
+            caseNumber.style.display = "none";
+            casePlayer.style.display = "block";
+            // --- END: NEW LOGIC FOR OPENED CASES ---
+            
         } else {
             // "closed"
             caseEl.classList.add("bg-gray-600", "hover:bg-gray-500");
@@ -291,13 +312,11 @@ function renderCases() {
  */
 function renderPlayerBoard() {
     playerBoard.innerHTML = ""; // Clear board
-    
+
     // Get the players for this round from the 'cases' variable
-    const players = [...cases];
-    
-    // Sort by value, descending (best player on top)
-    const sortedPlayers = players.sort((a, b) => b.value - a.value);
-    
+    // and create a new, sorted copy in one step.
+    const sortedPlayers = [...cases].sort((a, b) => b.value - a.value);
+
     for (const player of sortedPlayers) {
         const playerEl = document.createElement("div");
         playerEl.textContent = player.name;

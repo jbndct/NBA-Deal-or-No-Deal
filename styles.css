@@ -1,6 +1,10 @@
-/* Custom font */
 body {
     font-family: 'Inter', sans-serif;
+}
+
+/* ADD THIS NEW RULE to hide player names by default */
+.case-player {
+    display: none;
 }
 
 /* Style for the player's chosen case */
@@ -21,6 +25,7 @@ body {
     display: none;
 }
 
+/* This rule will now work as intended */
 .opened-case .case-player {
     display: block;
 }

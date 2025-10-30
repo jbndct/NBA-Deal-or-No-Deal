@@ -4,11 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NBA Deal or No Deal</title>
-    <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Custom Stylesheet -->
-    <link rel="stylesheet" href="style.css">
-    <!-- Google Font -->
+    <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
@@ -17,17 +14,14 @@
 
     <div class="max-w-7xl mx-auto">
         
-        <!-- Header -->
         <header class="text-center mb-6">
             <h1 class="text-3xl md:text-5xl font-extrabold text-white">NBA DEAL OR NO DEAL</h1>
             <p class="text-lg text-gray-400">Can you build a championship team?</p>
         </header>
 
-        <!-- Final Team Roster -->
         <div class="bg-gray-800 rounded-lg shadow-xl p-4 mb-6">
             <h2 class="text-xl font-bold text-center mb-4">YOUR STARTING FIVE</h2>
             <div id="team-roster" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 text-center">
-                <!-- Roster will be populated by JS -->
                 <div class="bg-gray-700 p-3 rounded-lg">
                     <span class="text-sm font-semibold text-amber-400 block">POINT GUARD</span>
                     <span id="roster-PG" class="text-lg font-bold">---</span>
@@ -51,30 +45,22 @@
             </div>
         </div>
 
-        <!-- Main Game Area -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             
-            <!-- Left Panel: Player Board -->
             <div class="md:col-span-1 bg-gray-800 rounded-lg shadow-xl p-4">
                 <h3 class="text-lg font-bold mb-3 text-center">REMAINING PLAYERS</h3>
                 <div id="player-board" class="grid grid-cols-2 gap-2">
-                    <!-- Player board will be populated by JS -->
-                </div>
+                    </div>
             </div>
 
-            <!-- Right Panel: Cases and Status -->
             <div class="md:col-span-2">
-                <!-- Status Message -->
                 <div class="bg-gray-800 rounded-lg shadow-xl p-4 mb-6 text-center">
                     <h2 id="status-message" class="text-xl md:text-2xl font-bold text-amber-400"></h2>
                 </div>
 
-                <!-- Case Grid -->
                 <div id="case-grid" class="grid grid-cols-5 gap-3 md:gap-4 mb-6">
-                    <!-- Cases will be populated by JS -->
-                </div>
+                    </div>
 
-                <!-- Reset Button -->
                 <div class="text-center">
                     <button id="reset-button" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg transition duration-200">
                         Reset Game
@@ -84,7 +70,6 @@
         </div>
     </div>
 
-    <!-- Banker's Offer Modal -->
     <div id="offer-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50 hidden">
         <div class="bg-gray-800 rounded-lg shadow-2xl p-6 md:p-8 max-w-md w-full text-center">
             <h2 class="text-3xl font-extrabold mb-4">BANKER'S OFFER</h2>
@@ -103,8 +88,6 @@
         </div>
     </div>
 
-    <!-- Main Game Logic Script -->
-    <!-- Note: type="module" is CRITICAL for using 'import' -->
-    <script src="script.js" type="module"></script>
+    <script type="module" src="script.js"></script>
 </body>
 </html>
