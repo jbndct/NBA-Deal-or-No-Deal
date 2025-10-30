@@ -1,0 +1,32 @@
+/* Custom font */
+body {
+    font-family: 'Inter', sans-serif;
+}
+
+/* Style for the player's chosen case */
+.player-case {
+    background-color: #f59e0b; /* Tailwind amber-500 */
+    color: #111827; /* Tailwind gray-900 */
+    border: 2px solid #fbbf24; /* Tailwind amber-400 */
+}
+
+/* Style for an opened case */
+.opened-case {
+    background-color: #374151; /* Tailwind gray-700 */
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.opened-case .case-number {
+    display: none;
+}
+
+.opened-case .case-player {
+    display: block;
+}
+
+/* Style for the player board */
+.player-board-player.eliminated {
+    text-decoration: line-through;
+    opacity: 0.4;
+}
